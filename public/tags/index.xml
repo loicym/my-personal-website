@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags | Loïc Maréchal</title>
+    <link>/tags/</link>
+      <atom:link href="/tags/index.xml" rel="self" type="application/rss+xml" />
+    <description>Tags</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Mon, 30 Dec 2019 21:13:14 -0500</lastBuildDate>
+    <image>
+      <url>/img/icon-192.png</url>
+      <title>Tags</title>
+      <link>/tags/</link>
+    </image>
+    
+    <item>
+      <title>efficient frontier</title>
+      <link>/tags/efficient-frontier/</link>
+      <pubDate>Mon, 30 Dec 2019 21:13:14 -0500</pubDate>
+      <guid>/tags/efficient-frontier/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>matrix computation</title>
+      <link>/tags/matrix-computation/</link>
+      <pubDate>Mon, 30 Dec 2019 21:13:14 -0500</pubDate>
+      <guid>/tags/matrix-computation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>optimal portfolio choice</title>
+      <link>/tags/optimal-portfolio-choice/</link>
+      <pubDate>Mon, 30 Dec 2019 21:13:14 -0500</pubDate>
+      <guid>/tags/optimal-portfolio-choice/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>plot</title>
+      <link>/tags/plot/</link>
+      <pubDate>Mon, 30 Dec 2019 21:13:14 -0500</pubDate>
+      <guid>/tags/plot/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>R Markdown</title>
+      <link>/tags/r-markdown/</link>
+      <pubDate>Mon, 30 Dec 2019 21:13:14 -0500</pubDate>
+      <guid>/tags/r-markdown/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>commodity index investment</title>
+      <link>/tags/commodity-index-investment/</link>
+      <pubDate>Fri, 27 Sep 2019 00:00:00 +0000</pubDate>
+      <guid>/tags/commodity-index-investment/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>realized volatility</title>
+      <link>/tags/realized-volatility/</link>
+      <pubDate>Fri, 27 Sep 2019 00:00:00 +0000</pubDate>
+      <guid>/tags/realized-volatility/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

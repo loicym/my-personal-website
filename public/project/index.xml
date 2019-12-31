@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Projects | Loïc Maréchal</title>
+    <link>/project/</link>
+      <atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <description>Projects</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Fri, 27 Sep 2019 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/img/icon-192.png</url>
+      <title>Projects</title>
+      <link>/project/</link>
+    </image>
+    
+    <item>
+      <title>A comprehensive look at commodity volatility forecasting</title>
+      <link>/project/internal-project2/</link>
+      <pubDate>Fri, 27 Sep 2019 00:00:00 +0000</pubDate>
+      <guid>/project/internal-project2/</guid>
+      <description>&lt;p&gt;This research combines recent advances in the Realized Volatility (RV) literature and three specific commodity futures factors to improve the forecasts of commodity volatility. The three forecasting variables are the term structure slope, the time to maturity and a measure of supply and demand uncertainty. I first assess these variables’ empirical contribution to commodity futures volatility, in adding them in RV forecast models. First in the univariate HAR-RV of Corsi (2009) and second in the multivariate VAR-RV of Andersen, Bollerslev, Diebold, and Labys (2003). The long-term memory of assets RV justifies the former, whereas the &amp;ldquo;financialization&amp;rdquo; of commodities and the resulting commodity connectedness, supports the latter. I evaluate the out of sample validity of these forecast models and propose one risk management application. Hence, this research is important for both economic understanding and risk management purposes.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>The valuation effects of index investment in commodity futures</title>
+      <link>/project/internal-project1/</link>
+      <pubDate>Fri, 27 Sep 2019 00:00:00 +0000</pubDate>
+      <guid>/project/internal-project1/</guid>
+      <description>&lt;p&gt;We identify and date a significant surge in the amount of investment tracking commodity futures indices, a phenomenon identified heretofore with anecdotal or visual evidences. Using a difference-in-differences setting on cumulative abnormal log price changes, computed with several benchmarks during the roll window of the SP-GSCI, we first find that the uncovered break in the speculative investment structure had an alleviating effect. Second, we explain the abnormal nearby and first deferred contracts price changes by measures of risk (liquidity) premium required at long (short) term horizon by speculative (hedging) activity. Finally, in a cruder market efficiency framework, we find that transaction costs incurred by an arbitrager (price taker) explain most of the abnormal term-structure change with a coefficient close to unity. In addition, this abnormal change -which is of 17 basis points at most- is never significant once we adjust the standard errors for event-induced variance and cross-correlation.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

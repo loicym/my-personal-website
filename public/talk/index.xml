@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Recent &amp; Upcoming Talks | Loïc Maréchal</title>
+    <link>/talk/</link>
+      <atom:link href="/talk/index.xml" rel="self" type="application/rss+xml" />
+    <description>Recent &amp; Upcoming Talks</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language><lastBuildDate>Sun, 20 Sep 2020 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/img/icon-192.png</url>
+      <title>Recent &amp; Upcoming Talks</title>
+      <link>/talk/</link>
+    </image>
+    
+    <item>
+      <title>Dauphine 2019 Hedge Fund Conference - poster</title>
+      <link>/talk/2020hfr_poster/</link>
+      <pubDate>Sun, 20 Sep 2020 00:00:00 +0000</pubDate>
+      <guid>/talk/2020hfr_poster/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>New Zealand Finance Meeting 2019 - discussion</title>
+      <link>/talk/2019nzfm_discussion/</link>
+      <pubDate>Wed, 18 Dec 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019nzfm_discussion/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>New Zealand Finance Meeting 2019 - presentation</title>
+      <link>/talk/2019nzfm_presentation/</link>
+      <pubDate>Wed, 18 Dec 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019nzfm_presentation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Securities and Financial Markets Conference 2019 - presentation</title>
+      <link>/talk/2019sfm_presentation/</link>
+      <pubDate>Fri, 06 Dec 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019sfm_presentation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ESSEC 2019 Non Standard Investment Choice Workshop - presentation</title>
+      <link>/talk/2019nsic_presentation/</link>
+      <pubDate>Wed, 18 Sep 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019nsic_presentation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Queenstown 2019 Derivatives Markets Conference - discussion</title>
+      <link>/talk/2019dmc_discussion/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019dmc_discussion/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Queenstown 2019 Derivatives Markets Conference - presentation</title>
+      <link>/talk/2019dmc_presentation/</link>
+      <pubDate>Thu, 08 Aug 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019dmc_presentation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>IAF 2019 Research Day - presentation</title>
+      <link>/talk/2019iaf_presentation/</link>
+      <pubDate>Thu, 06 Jun 2019 00:00:00 +0000</pubDate>
+      <guid>/talk/2019iaf_presentation/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

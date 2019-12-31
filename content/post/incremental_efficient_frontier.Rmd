@@ -1,0 +1,104 @@
+---
+title: "Incremental efficient frontier"
+author: "Loïc Maréchal"
+date: 2019-12-30T21:13:14-05:00
+categories: ["R"]
+tags: ["R Markdown", "plot", "efficient frontier", "optimal portfolio choice", "matrix computation"]
+share: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE)
+```
+
+# Efficient frontier
+
+In this post, I quickly describe how to compute and update an efficient frontier in adding stocks to an existing porfolio with R.
+
+First let's write a simple code for an efficient frontier computation
+
+```{r}
+#define a function that takes as argument a matrix of returns (MRet) and a range (sequence) of target expected returns (rangeMu)
+efficient_frontier = function(MRet,rangeMu)  
+{
+  #get the row (uM) and column (pM) dimensions of the matrix of returns
+  uM = dim(MRet)[1]
+  pM = dim(MRet)[2]
+  
+  #compute the portfolio's individual stocks expected returns
+  expRet = colMeans(MRet)
+
+  #compute the sample var-covar matrix
+  Omega = var(MRet)
+  
+  
+  #define a vector of constraints (the weights of the portfolio must sum to one)
+  unityVec = rep(1,pM)
+  
+  #define a matrix of constraints (weights sum to one and variance will match a target level of expected returns)
+  A = rbind(expRet,unityVec)
+
+  #get the length of the target range (sequence)
+  n = length(rangeMu)
+  #define an empty variance vector
+  myVar = rep(NA,n)
+  #define an empty matrix of weights for each stock at each level of target expected return
+  myWeights = matrix(data=NA,nrow=n,ncol=pM)
+  
+  #loop over the target expected returns range and compute the corresponding variances and weights
+  for(i in 1:n)
+  {
+    b = matrix(data=c(rangeMu[i],1),nrow=2)
+    myVar[i] = t(b)%*%solve(A%*%solve(Omega)%*%t(A))%*%b
+    myWeights[i,] = solve(Omega)%*%t(A)%*%solve(A%*%solve(Omega)%*%t(A))%*%b
+  }
+
+  #transform the computed variances in standard deviation
+  mySd = myVar^0.5
+  #return the standard deviation vector
+  return(mySd)
+}
+
+```
+
+# Incremental efficient frontier
+
+[//]: <> (some comment here)
+
+```{r}
+#define a function that takes as argument a matrix of returns (MRet)
+efficient_frontier_increment = function(MRet)
+{
+  #get the column (pM) dimension of the matrix of returns
+  pM = dim(MRet)[2]
+  #hard code the sequence vector of target expected returns (can be passed as argument)
+  rangeMu = seq(-0.01,0.05,0.001)
+  #compute the standard deviation vector of the portfolio composed of the first nine stocks of the matrix
+  mySd = efficient_frontier(MRet[,1:9],rangeMu)
+  
+  #get a new plot
+  dev.new()
+  #plot the efficient frontier of the portfolio composed of the first nine stocks
+  plot(mySd*100,rangeMu*100,xlab="volatility (%)",ylab="expected return (%)",t='l',xlim=c(0,max(mySd*100)),ylim=c(-1,5))
+  #enjoy the chart for two seconds
+  Sys.sleep(2)
+  #loop over the rest of the stocks and increment the efficient frontier with the next additional stock
+  for(j in 10:pM)
+  {
+    #recompute the efficient frontier
+    mySd = efficient_frontier(MRet[,1:j],rangeMu)
+    #add a line of the more efficient frontier on the chart
+    lines(mySd*100,rangeMu*100,col='red')
+    #define how long you want to wait before the next one
+    Sys.sleep(0.1)
+  }
+}
+```
+
+# Result in animation
+![Fig 1. Animation of an efficient frontier with stock increment](/post/incremental_efficient_frontier_files/figure-html/incremental_efficient_frontier.gif)
+
+To run the code with real historical figures, I propose a *.csv file of NYSE returns
+```{r echo=FALSE}
+xfun::embed_file('nyse_stocks_historical_returns.csv')
+```

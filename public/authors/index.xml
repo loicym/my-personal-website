@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Authors | Loïc Maréchal</title>
+    <link>/authors/</link>
+      <atom:link href="/authors/index.xml" rel="self" type="application/rss+xml" />
+    <description>Authors</description>
+    <generator>Source Themes Academic (https://sourcethemes.com/academic/)</generator><language>en-us</language>
+    <image>
+      <url>/img/icon-192.png</url>
+      <title>Authors</title>
+      <link>/authors/</link>
+    </image>
+    
+    <item>
+      <title></title>
+      <link>/authors/admin/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>/authors/admin/</guid>
+      <description>&lt;p&gt;I am a PhD candidate in Finance, focusing on commodity markets through the lens of asset pricing and risk management. I hold a Master in Banking and Finance from the University of Paris Nanterre, and have five years of commodity market analysis experience, working for consulting and trading companies. I also have a strong interest in machine learning methods (applied to Finance, natural science and natural language processing) and algorithmic trading (high-frequency / latency). I am a French citizen living in Switzerland.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,3 @@
+- animated skills
+- more animation along the website
+- 
