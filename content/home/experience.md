@@ -27,7 +27,7 @@ date_format = "Jan 2006"
   description = ""
   
 [[experience]]
-  title = "Collaborateur scientifique"
+  title = "Scientific collaborator"
   company = "Neuchâtel University"
   company_url = "https://www.unine.ch" 
   location = "Neuchâtel, Switzerland"
@@ -54,7 +54,7 @@ date_format = "Jan 2006"
   description = ""
 
 [[experience]]
-  title = "Algo Trader"
+  title = "Algorithmic Trading (hobby)"
   company = "Own Account"
   company_url = "https://github.com/loicym"
   location = "Lausanne, Switzerland"

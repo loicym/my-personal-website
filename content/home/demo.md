@@ -8,7 +8,7 @@ headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 1  # Order that this section will appear.
 
-title = "Welcome, world"
+title = "Welcome, world!"
 subtitle = ""
 
 [design]
@@ -30,7 +30,7 @@ subtitle = ""
 
   # Background image.
   #image = "headers/bubbles-wide.jpg"  # Name of image in `static/img/`.
-  image = "headers/aiguille-verte.jpg"  # Name of image in `static/img/`.
+  image = "headers/aiguille_verte_6.jpg"  # Name of image in `static/img/`.
   image_darken = 0.3  # Darken the image? Range 0-1 where 0 is transparent and 1 is opaque. 
   image_size = "cover"  #  Options are `cover` (default), `contain`, or `actual` size.
   image_position = "center"  # Options include `left`, `center` (default), or `right`. 
@@ -51,4 +51,4 @@ subtitle = ""
  css_class = ""
 +++
 
-Welcome to my website - Here you will find information about my research, knowledge, hobbies, teaching and work experience.
+Welcome to my website! Here you will find information about my research, teaching, work experience, and hobbies.

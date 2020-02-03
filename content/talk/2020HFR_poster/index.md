@@ -1,6 +1,6 @@
 ---
-title: Dauphine 2019 Hedge Fund Conference - poster
-event: Dauphine 2019 Hedge Fund Conference
+title: Dauphine 2020 Hedge Fund Conference - poster
+event: Dauphine 2020 Hedge Fund Conference
 event_url: "https://housefinance.dauphine.fr/fr/activites/annual-hedge-fund-research-conference/12th-annual-hedge-fund-research-conference.html"
 
 location: Dauphine University, Paris
@@ -12,11 +12,11 @@ address:
   country: France
 
 summary: Talk given during the 2019 Non Standard Investment Choice Workshop
-abstract: "Revisiting the valuation effects of the GSCI roll"
+abstract: "The valuation effects of index investment in commodity futures"
 
 # Talk start and end times.
 #   End time can optionally be hidden by prefixing the line with `#`.
-date: "2020-09-20T00:00:00Z"
+date: "2020-01-16T00:00:00Z"
 date_end: ""
 all_day: false
 

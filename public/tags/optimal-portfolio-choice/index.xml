@@ -24,74 +24,73 @@
 &lt;h1&gt;Efficient frontier&lt;/h1&gt;
 &lt;p&gt;In this post, I quickly describe how to compute and update an efficient frontier in adding stocks to an existing porfolio with R.&lt;/p&gt;
 &lt;p&gt;First let’s write a simple code for an efficient frontier computation&lt;/p&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;#define a function that takes as argument a matrix of returns (MRet) and a range (sequence) of target expected returns (rangeMu)
-efficient_frontier = function(MRet,rangeMu)  
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+efficient_frontier = function(MRet                         #matrix of returns (MRet)
+                              , rangeMu)                   #range (sequence) of target expected returns (rangeMu)
 {
-  #get the row (uM) and column (pM) dimensions of the matrix of returns
-  uM = dim(MRet)[1]
-  pM = dim(MRet)[2]
+                                              
+  uM &amp;lt;- dim(MRet)[1]                                       #get the row (uM) and column (pM) dimensions of the matrix of returns
+  pM &amp;lt;- dim(MRet)[2]
   
-  #compute the portfolio&amp;#39;s individual stocks expected returns
-  expRet = colMeans(MRet)
+  expRet &amp;lt;- colMeans(MRet)                                 #compute the portfolio&amp;#39;s individual stocks expected returns
 
-  #compute the sample var-covar matrix
-  Omega = var(MRet)
-  
-  
-  #define a vector of constraints (the weights of the portfolio must sum to one)
-  unityVec = rep(1,pM)
-  
-  #define a matrix of constraints (weights sum to one and variance will match a target level of expected returns)
-  A = rbind(expRet,unityVec)
+  Omega = var(MRet)                                        #compute the sample var-covar matrix
 
-  #get the length of the target range (sequence)
-  n = length(rangeMu)
-  #define an empty variance vector
-  myVar = rep(NA,n)
-  #define an empty matrix of weights for each stock at each level of target expected return
-  myWeights = matrix(data=NA,nrow=n,ncol=pM)
+  unityVec &amp;lt;- rep(1, pM)                                   #define a constraints vector (weights of the portfolio must sum to one)
   
-  #loop over the target expected returns range and compute the corresponding variances and weights
-  for(i in 1:n)
-  {
-    b = matrix(data=c(rangeMu[i],1),nrow=2)
-    myVar[i] = t(b)%*%solve(A%*%solve(Omega)%*%t(A))%*%b
-    myWeights[i,] = solve(Omega)%*%t(A)%*%solve(A%*%solve(Omega)%*%t(A))%*%b
+  A &amp;lt;- rbind(expRet, unityVec)                             #define a matrix of constraints (weights sum to one and variance will match a                                                                   #target level of expected returns)        
+
+  n &amp;lt;- length(rangeMu)                                     #get the length of the target range (sequence)
+  
+  myVar &amp;lt;- rep(NA, n)                                      #define an empty variance vector
+  
+  myWeights &amp;lt;- matrix(data = NA, nrow = n, ncol = pM)      #define an empty matrix of weights for each stock at each level of target
+                                                           #expected returns
+  
+ 
+  for(i in 1:n)                                            #loop over the target expected returns range and compute variances and weights 
+  {                                                        
+    b &amp;lt;- matrix(data = c(rangeMu[i], 1), nrow = 2)
+    myVar[i] &amp;lt;- t(b) %*% solve(A %*% solve(Omega) %*% t(A)) %*% b
+    myWeights[i,] &amp;lt;- solve(Omega) %*% t(A) %*% solve(A %*% solve(Omega) %*% t(A)) %*% b
   }
 
-  #transform the computed variances in standard deviation
-  mySd = myVar^0.5
-  #return the standard deviation vector
-  return(mySd)
+  mySd &amp;lt;- myVar^0.5                                        #compute the standard deviation vector
+  
+  return(mySd)                                             #return the standard deviation vector
 }&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;div id=&#34;incremental-efficient-frontier&#34; class=&#34;section level1&#34;&gt;
 &lt;h1&gt;Incremental efficient frontier&lt;/h1&gt;
-&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;#define a function that takes as argument a matrix of returns (MRet)
-efficient_frontier_increment = function(MRet)
+&lt;pre class=&#34;r&#34;&gt;&lt;code&gt;
+efficient_frontier_increment = function(MRet)                      #define a function that takes as argument a matrix of returns (MRet)
 {
-  #get the column (pM) dimension of the matrix of returns
-  pM = dim(MRet)[2]
-  #hard code the sequence vector of target expected returns (can be passed as argument)
-  rangeMu = seq(-0.01,0.05,0.001)
-  #compute the standard deviation vector of the portfolio composed of the first nine stocks of the matrix
-  mySd = efficient_frontier(MRet[,1:9],rangeMu)
+  pM &amp;lt;- dim(MRet)[2]                                               #get the column (pM) dimension of the matrix of returns
   
-  #get a new plot
-  dev.new()
-  #plot the efficient frontier of the portfolio composed of the first nine stocks
-  plot(mySd*100,rangeMu*100,xlab=&amp;quot;volatility (%)&amp;quot;,ylab=&amp;quot;expected return (%)&amp;quot;,t=&amp;#39;l&amp;#39;,xlim=c(0,max(mySd*100)),ylim=c(-1,5))
-  #enjoy the chart for two seconds
-  Sys.sleep(2)
-  #loop over the rest of the stocks and increment the efficient frontier with the next additional stock
-  for(j in 10:pM)
+  rangeMu &amp;lt;- seq(-0.01, 0.05, 0.001)                               #hard code the vector of expected returns (can be passed as argument)
+  
+  mySd &amp;lt;- efficient_frontier(MRet[, 1:9], rangeMu)                 #compute the sd vector of the portfolio composed of the first nine stocks  
+  
+  
+  dev.new()                                                        #get a new plot
+ 
+  plot(mySd * 100                                                  #plot the efficient frontier of the portfolio composed of the first 9 stocks
+       , rangeMu * 100
+       , xlab = &amp;quot;volatility (%)&amp;quot;
+       , ylab = &amp;quot;expected return (%)&amp;quot;
+       , t = &amp;#39;l&amp;#39;
+       , xlim = c(0, max(mySd * 100))
+       , ylim = c(-1, 5))   
+  
+  Sys.sleep(2)                                                     #enjoy the chart for two seconds
+  
+  for(j in 10:pM)                                                  #loop over all stocks and increment the portfolio with the next stock
   {
-    #recompute the efficient frontier
-    mySd = efficient_frontier(MRet[,1:j],rangeMu)
-    #add a line of the more efficient frontier on the chart
-    lines(mySd*100,rangeMu*100,col=&amp;#39;red&amp;#39;)
-    #define how long you want to wait before the next one
-    Sys.sleep(0.1)
+    mySd &amp;lt;- efficient_frontier(MRet[, 1:j], rangeMu)               #recompute the efficient frontier
+    
+    lines(mySd * 100, rangeMu * 100, col = &amp;#39;red&amp;#39;)                  #add a line of the more efficient frontier on the chart
+    
+    Sys.sleep(0.1)                                                 #define how long you want to wait before the next one
   }
 }&lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;

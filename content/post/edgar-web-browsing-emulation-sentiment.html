@@ -1,0 +1,372 @@
+---
+title: "Security Exchange Commission: web browsing emulation and natural language processing"
+author: "Loïc Maréchal"
+date: 2020-01-22T21:13:14-05:00
+categories: ["Java"]
+tags: ["Java", "SEC", "NLP", "web scrapping", "sentiment extraction"]
+share: false
+---
+
+
+
+<p>In this tutorial, I explain how to emulate navigation on the SEC website, perform bulk downloads of forms (e.g. 10-K forms) and extract for each company a sentiment grade, based on basic natural language processing methods (dictionaries). The full Java package including two dictionaries of positive and negative tone words is available on my github. The SEC used to provide all forms on a FTP server, however, two years ago they stopped it and we now need this little workaround to perform bulk downloads. This tutorial is inspired from a class given to the students in the Msc in Finance at my University (Neuchâtel).</p>
+<div id="step-1-download-index-files-.idx-from-the-sec-website." class="section level2">
+<h2>Step 1: download index files (*.idx) from the SEC website.</h2>
+<div id="code" class="section level3">
+<h3>Code</h3>
+<pre class="java"><code>package edgar;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Scanner;
+import org.apache.commons.io.FileUtils;
+
+public class GetFiles {
+    private static int beginYear = 1999;
+    private static int endYear = 2016;
+    
+    private static int beginQtr = 1;
+    private static int endQtr = 4;
+    
+    protected static String myBaseDestination = &quot;10K\\&quot;;
+    
+    public static void main(String[] args) throws IOException{
+        runUrls(beginYear, endYear, beginQtr, endQtr);
+    }
+    
+    public static void runUrls(int beginYear, int endYear, int beginQtr, int endQtr) throws IOException{
+        String myBeginString = &quot;idxFiles\\&quot;;
+        String myEndingString = &quot;.company.idx&quot;;
+        String myStringFile = &quot;&quot;;
+        
+        File myDestinationFile;
+        
+        for(int i = beginYear; i &lt;= endYear; i++)
+        {   
+            for(int j = beginQtr; j &lt;= endQtr;j ++)
+            {
+                myStringFile = myBeginString+String.valueOf(i)+&quot;QTR&quot;+String.valueOf(j)+myEndingString;
+                //System.out.println(myStringFile);
+                String content = new String(Files.readAllBytes(Paths.get(myStringFile)));
+                //parse and download the matching files
+                parseContent(content, i);
+            }
+        }
+    }
+
+    public static void parseContent(String content, int year)
+    {
+        // first get read of the first lines.);
+        Scanner contentScanner = new Scanner(content);
+        int lineCount = 0;
+        while(contentScanner.hasNextLine()) {
+            String next = contentScanner.nextLine();
+            //ignore the first 9 lines
+            if(lineCount &gt; 9){
+                System.out.println(next);
+                //get the cik
+                String cik = next.substring(74,86).replaceAll(&quot;\\s&quot;,&quot;&quot;);   
+                //get the form type
+                String formType = next.substring(62,74).replaceAll(&quot;\\s&quot;,&quot;&quot;);;
+                //System.out.println(formType);
+                
+                if(formType.equals(&quot;10-K&quot;)){
+                    String urlToDownload = next.substring(98,150).replaceAll(&quot;\\s&quot;,&quot;&quot;);
+                    System.out.println(urlToDownload);
+                    downloadFiles(&quot;https://www.sec.gov/Archives/&quot;+urlToDownload, new File(myBaseDestination+String.valueOf(year)+&quot;/&quot;+urlToDownload.replaceAll(&quot;/&quot;, &quot;.&quot;)));
+                    //alternative, use the function already defined in the G_getIdx class:
+                    //G_getIdx.downloadIdx(&quot;https://www.sec.gov/Archives/&quot;+urlToDownload, new File(myBaseDestination+String.valueOf(year)+&quot;/&quot;+urlToDownload.replaceAll(&quot;/&quot;, &quot;.&quot;)));
+                }
+            }
+            lineCount++;
+        }
+    }
+    
+    public static void downloadFiles(String urlToDownload, File destinationFile){
+        URL url = null;
+        try {
+            url = new URL(urlToDownload);
+        } 
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            FileUtils.copyURLToFile(url, destinationFile);
+        } 
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div id="step-2-use-the-downloaded-index-files-.idx-to-recognize-the-type-of-forms-wanted-here-10-k" class="section level2">
+<h2>Step 2: Use the downloaded index files (*.idx) to recognize the type of forms wanted (here 10-K)</h2>
+<div id="code-1" class="section level3">
+<h3>Code</h3>
+<pre class="java"><code>package edgar;
+
+import org.apache.commons.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class GetIdx 
+{
+    //define the first year of the index files
+    private static int beginYear = 1999;
+    //define the last year of the index files
+    private static int endYear = 2018;
+    
+    //same for quarters
+    private static int beginQtr = 1;
+    private static int endQtr = 4;
+    
+    //program entry point
+    public static void main(String[] args){
+        runUrls(beginYear, endYear, beginQtr, endQtr);
+    }
+    
+    //core method accessing every quarter year index file
+    public static void runUrls(int beginYear, int endYear, int beginQtr, int endQtr){
+        String myBeginString = &quot;https://www.sec.gov/Archives/edgar/full-index/&quot;;
+        String myEndingString = &quot;/company.idx&quot;;
+        String myStringUrl = &quot;&quot;;
+        String myBaseDestination = &quot;idxFiles\\&quot;;
+        
+        File myDestinationFile;
+        
+        for(int i = beginYear; i &lt;= endYear; i++){
+            for(int j = beginQtr; j &lt;= endQtr;j ++){
+                myStringUrl = myBeginString+String.valueOf(i)+&quot;/QTR&quot;+String.valueOf(j)+myEndingString;
+                System.out.println(myStringUrl);
+                
+                myDestinationFile = new File(myBaseDestination+String.valueOf(i)+&quot;QTR&quot;+String.valueOf(j)+&quot;.company.idx&quot;);
+
+                System.out.println(&quot;downloading: &quot;+String.valueOf(i)+&quot;QTR&quot;+String.valueOf(j)+&quot;.company.idx&quot;);
+                downloadIdx(myStringUrl, myDestinationFile);    
+            }
+        }
+    }
+    
+    //method called to download the files
+    public static void downloadIdx(String baseUrl, File destinationFile){
+        URL urlUrl = null;
+        try {
+            urlUrl = new URL(baseUrl);
+        } 
+        catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+        try {
+            FileUtils.copyURLToFile(urlUrl, destinationFile);
+        } 
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}</code></pre>
+</div>
+</div>
+<div id="step-3-parse-the-downloaded-forms-to-retrieve-their-date-of-submission-company-identifiers-and-names-and-compute-a-basic-sentiment-grade" class="section level2">
+<h2>Step 3: Parse the downloaded forms to retrieve their date of submission, company identifiers and names and compute a basic sentiment grade</h2>
+<div id="code-2" class="section level3">
+<h3>Code</h3>
+<pre class="java"><code>package edgar;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.*;
+import org.apache.commons.io.*;
+
+
+public class ParseFiles {
+    // 10K All Years, a folder with all downloaded files sorted to parse.
+    
+    private static final String sortedPath = &quot;10K\\1999\\&quot;;
+    private static final String csvOutputPath = &quot;outputSentiment.csv&quot;;
+    private static final File negativeDictionary = new File(&quot;dictionary\\negativeWords.txt&quot;);
+    private static final File positiveDictionary = new File(&quot;dictionary\\positiveWords.txt&quot;);
+    //private static final File positiveDictionary = new File(&quot;C:\\Users\\aerial\\javaWorkspace\\dictionary\\positiveWords.txt&quot;);
+    
+    private static String myOutputContent;
+    
+    private static List&lt;String&gt; positiveWords = new ArrayList&lt;String&gt;();
+    private static List&lt;String&gt; negativeWords = new ArrayList&lt;String&gt;();
+    
+    private static String[] nameArray;
+    private static String[] dateArray;
+    private static String[] cikArray;
+    
+    //two arrays for the positive and negative score
+    private static double[] positiveScoreArray;
+    private static double[] negativeScoreArray;
+    
+    public static void main(String[] args) throws IOException { 
+        //load the positive and negative words array lists with the dictionaryReader method
+        negativeWords = dictionaryReader(negativeDictionary);
+        positiveWords = dictionaryReader(positiveDictionary);
+        
+        //load all files from the path
+        File listOfFiles[] = fileLoader(new File(sortedPath));
+        System.out.println(listOfFiles);
+
+        nameArray = new String[listOfFiles.length];
+        dateArray = new String[listOfFiles.length];
+        cikArray = new String[listOfFiles.length];
+        positiveScoreArray = new double[listOfFiles.length];
+        negativeScoreArray = new double[listOfFiles.length];
+        
+        
+        for (int i = 0; i &lt; listOfFiles.length; i++){
+            System.out.println(&quot;index parsed is: &quot;+i+&quot; out of: &quot;+String.valueOf(listOfFiles.length));
+            File file = listOfFiles[i];
+            System.out.println(file);
+            myOutputContent = fileReader(file);
+            System.out.println(&quot;fileReader is done&quot;);
+            fileParser(myOutputContent, i);
+            System.out.println(&quot;fileParser is done&quot;);
+            getSentiment(myOutputContent, i);
+            System.out.println(&quot;getSentiment is done&quot;);
+        }
+        infoWriter(nameArray, dateArray, cikArray, negativeScoreArray, positiveScoreArray);
+    }
+
+    //read all the files of the folders / subfolders. and return them.
+    public static File[] fileLoader(File folderPath){
+        File[] listOfFiles = folderPath.listFiles();
+        return (listOfFiles);
+    }   
+    
+    //returns the final complete text file in the form of a single string.
+    public static String fileReader(File file) throws IOException{
+        String myOutputContent = null;
+        
+        if (file.isFile() &amp;&amp; file.getName().endsWith(&quot;.txt&quot;)){
+            String myCharSet = null;
+            myOutputContent = FileUtils.readFileToString(file, myCharSet);
+          }
+          return(myOutputContent);
+    }
+    
+    //parse the content of the file string and isolate company names and cik using the regex abilities of Java.
+    public static void fileParser(String fileContent, int index) throws IOException{
+        Pattern myBeginPattern = Pattern.compile(&quot;COMPANY\\s*CONFORMED\\s*NAME\\s*:\\s*&quot;);
+        Pattern myEndPattern = Pattern.compile(&quot;CENTRAL\\s*INDEX\\s*KEY\\s*:\\s*&quot;);
+        
+        Matcher myBeginMatcher = myBeginPattern.matcher(fileContent);
+        Matcher myEndMatcher = myEndPattern.matcher(fileContent);   
+        
+        int beginChar = (myBeginMatcher.find() ? myBeginMatcher.end() : -1);
+        int endChar = (myEndMatcher.find() ? myEndMatcher.start() : -1);
+        
+        String myCompanyName = fileContent.substring(beginChar,endChar);
+        myCompanyName = myCompanyName.trim().replaceAll(&quot;\n&quot;, &quot;&quot;);
+        
+        System.out.println(myCompanyName);
+        
+        myBeginPattern = Pattern.compile(&quot;CONFORMED\\s*PERIOD\\s*OF\\s*REPORT\\s*:\\s*&quot;);
+        myEndPattern = Pattern.compile(&quot;FILED\\s*AS\\s*OF\\s*DATE\\s*:\\s*&quot;);
+        
+        myBeginMatcher = myBeginPattern.matcher(fileContent);
+        myEndMatcher = myEndPattern.matcher(fileContent);   
+        
+        beginChar = (myBeginMatcher.find() ? myBeginMatcher.end() : -1);
+        endChar = (myEndMatcher.find() ? myEndMatcher.start() : -1);
+        
+        String myFiscalEndYear = fileContent.substring(beginChar,endChar);
+        myFiscalEndYear = myFiscalEndYear.trim().replaceAll(&quot;\n&quot;, &quot;&quot;);
+        
+        System.out.println(myFiscalEndYear);
+        
+        myBeginPattern = Pattern.compile(&quot;CENTRAL\\s*INDEX\\s*KEY\\s*:\\s*&quot;);
+        myEndPattern = Pattern.compile(&quot;STANDARD\\s*INDUSTRIAL\\s*CLASSIFICATION\\s*:\\s*&quot;);
+        
+        myBeginMatcher = myBeginPattern.matcher(fileContent);
+        myEndMatcher = myEndPattern.matcher(fileContent);   
+        
+        beginChar = (myBeginMatcher.find() ? myBeginMatcher.end() : -1);
+        endChar = (myEndMatcher.find() ? myEndMatcher.start() : -1);
+        
+        String cik = fileContent.substring(beginChar,endChar);
+        cik = cik.trim().replaceAll(&quot;\n&quot;, &quot;&quot;);
+        
+        System.out.println(cik);
+        
+        nameArray[index] = myCompanyName;
+        dateArray[index] = myFiscalEndYear;
+        cikArray[index] = cik;
+    }
+    
+    private static void getSentiment(String textFile, int indexFile) throws IOException{
+        for (int i = 0; i &lt; positiveWords.size(); i++)
+        {
+            if (textFile.toLowerCase().contains(positiveWords.get(i).toLowerCase()))
+                positiveScoreArray[indexFile]++;
+        }
+        
+        for (int i = 0; i &lt; negativeWords.size(); i++)
+        {
+            if (textFile.toLowerCase().contains(negativeWords.get(i).toLowerCase()))
+                negativeScoreArray[indexFile]++;
+        }   
+    }
+    
+    public static List&lt;String&gt; dictionaryReader(File dictionary) throws IOException{
+        BufferedReader br = new BufferedReader(new FileReader(dictionary));
+        String line;
+        List&lt;String&gt; wordList = new ArrayList&lt;String&gt;();
+        while ((line = br.readLine()) != null){
+            wordList.add(line);
+            System.out.println(line);
+        }
+        return wordList;
+    }
+    
+    public static void infoWriter(String[] nameArray, String[] dateArray, String[] cikArray, double[] negativeScoreArray, double[] positiveScoreArray) throws IOException{
+        FileWriter writer = new FileWriter(csvOutputPath,false);
+                        
+        writer.append(&quot;company name&quot;);
+        writer.append(&#39;,&#39;);
+        writer.append(&quot;date&quot;);
+        writer.append(&#39;,&#39;);
+        writer.append(&quot;cik&quot;);
+        writer.append(&#39;,&#39;);
+        writer.append(&quot;negative score&quot;);
+        writer.append(&#39;,&#39;);
+        writer.append(&quot;positive score&quot;);
+        writer.append(&#39;,&#39;);
+        writer.append(&quot;normalized overall score&quot;);
+        
+        writer.append(&#39;\n&#39;);
+            
+        for(int i = 0; i&lt;nameArray.length; i++)
+        {
+            writer.append(nameArray[i]);
+            writer.append(&#39;,&#39;);
+            writer.append(dateArray[i]);
+            writer.append(&#39;,&#39;);
+            writer.append(cikArray[i]);
+            writer.append(&#39;,&#39;);
+            writer.append(String.valueOf(negativeScoreArray[i]));
+            writer.append(&#39;,&#39;);
+            writer.append(String.valueOf(positiveScoreArray[i]));
+            writer.append(&#39;,&#39;);
+            writer.append(String.valueOf((positiveScoreArray[i]-negativeScoreArray[i])/(positiveScoreArray[i]+negativeScoreArray[i])));
+                       
+            writer.append(&#39;\n&#39;);
+        }
+            
+        writer.flush();
+        writer.close();
+    }
+}</code></pre>
+<p>To get the full working package (including dictionaries), you can clone or import the project from my <a href="https://github.com/loicym/edgar">github repository</a></p>
+</div>
+</div>

@@ -1,0 +1,500 @@
+---
+title: "Multivariate break test"
+author: "Loïc Maréchal"
+date: 2020-01-22T21:13:14-05:00
+categories: ["R"]
+tags: ["R Markdown", "plot", "structural breaks", "multivariate time series", "matrix computation"]
+share: false
+---
+
+
+
+<p>In this tutorial, I explain how to implement, in a flexible way, the algorithm of Bai, Lumsdaine, and Stock (1998).</p>
+<div id="step-1-lets-begin-by-lagging-our-matrix-of-observations." class="section level2">
+<h2>Step 1: Let’s begin by lagging our matrix of observations.</h2>
+<p>This function takes as argument a matrix of time series and lags it by an order (q).</p>
+<div id="code" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_lags &lt;- function(Y                                                   #time series matrix Y
+                         , q)                                                #lag order q
+{
+  p &lt;- dim(Y)[1]                                                             #get the dimensions
+  n &lt;- dim(Y)[2]
+
+  myDates &lt;- rownames(Y)[(q + 1) : p]                                        #optional: keep the rownames dates of the data frame with final matching
+  Y &lt;- data.matrix(Y)                                                        #matrix conversion
+
+  YLAG &lt;- matrix(data = NA, nrow &lt;- (p - q), ncol &lt;- (n * (q + 1)))          #create an empty matrix
+
+  for(i in 0:q)
+  {
+    YLAG[ , (n * i + 1):(n * (i + 1))] &lt;- Y[(q - i + 1):(p - i), ]
+  }
+
+  Y &lt;- YLAG[,1:n]
+  YLAG &lt;- YLAG[,(n + 1):dim(YLAG)[2]]
+  return(list(Y = Y, YLAG = YLAG, myDates = myDates))
+}
+</code></pre>
+</div>
+</div>
+<div id="step-2-create-all-matrices" class="section level2">
+<h2>Step 2: Create all matrices</h2>
+<p>This function takes as argument, a matrix Y (of multivariate time series), an order q for the VAR, an optional matrix X of contemporaneous covariates,
+it adds an optional trend and determines whether we test for a break at the mean level (intercept = TRUE) or for all the parameters (intercept = FALSE).</p>
+<div id="code-1" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>matrix_conformation &lt;- function(Y, q, X, trend, intercept)
+{
+  pInit &lt;-  dim(Y)[1]                                                           #get the original number of observations
+
+  lY &lt;- compute_lags(Y, q)                                                      #get the list of contemporaneous and lags objects
+
+  Y &lt;- lY$Y                                                                     #get the matching dependent matrix
+  YLAG &lt;- lY$YLAG                                                               #get the lagged dependent variables matrix
+  myDates &lt;- lY$myDates                                                         #get the original matching rowname vector (of dates)
+  
+  p &lt;- dim(Y)[1]                                                                #length of the matrix
+  nEq &lt;- dim(Y)[2]                                                              #number of equations of the vAR
+
+  print(p)
+  In &lt;- diag(nEq)                                                               #identity matrix of the number of equations of the VAR
+
+  Gt &lt;- as.matrix(cbind(rep(1, p), YLAG))                                       #create a unique matrix transpose of G with one intercept and autoregressive terms
+  
+  n &lt;- dim(Gt)[2]                                                               #incremental number of regressors
+
+  if(!is.null(X))                                                               #if additional covariates matrix is passed as argument
+  {
+    if(pInit==dim(X)[1])                                                        #and if its size is equal to the original matrix Y
+    {
+      Gt &lt;- cbind(Gt, data.matrix(X[(q + 1) : pInit, ]))                        #increment Gt by the contemporaneous covariate matrix X
+      n &lt;- dim(Gt)[2]                                                           #increment the total number of regressors
+    }
+    else
+      print(&quot;The number of observations of X does not match the one of Y&quot;)
+  }
+
+  if(trend)                                                                     #check if we add a trend
+  {
+    Gt &lt;- cbind(Gt, seq(1, p, by = 1))                                          #add trend
+    n &lt;- dim(Gt)[2]                                                             #increment the total number of regressors
+  }
+
+  if(intercept)                                                                 #if only the intercept is allowed to break
+  {
+    s &lt;- t(data.matrix(c(rep(0, n))))                                           #create the selection vector
+    s[1] &lt;- 1                                                                   #vector only select the first element (intercept) to test the shift
+    S &lt;- kronecker(s, In)                                                       #create the selection matrix
+  }
+
+  if(!intercept)                                                                #full parameters structural change estimation
+  {                                                                             #get the full dimension of the test
+    r &lt;- nEq * n
+    S &lt;- diag(r)                                                                #identity matrix of the size of the test is the selection matrix
+  }
+
+  G &lt;- t(Gt)                                                                    #transpose Gt to get G as in BLS
+
+  Yex &lt;- data.matrix(c(t(Y)))                                                   #Expend and vectorize Y
+  
+  Gex &lt;- kronecker(t(G), In)                                                    #Expend G
+  return(list(Yex = Yex, Gex = Gex, p = p, G = G, S = S, myDates = myDates, Y = Y, nEq = nEq))
+}</code></pre>
+</div>
+</div>
+<div id="step-3-we-determine-which-is-the-optimal-order-of-the-varq.-for-this-we-keep-the-option-of-using-the-akaike-information-criterion-aic-or-bayesian-information-criterion-bic." class="section level2">
+<h2>Step 3: We determine which is the optimal order of the VAR(q). For this we keep the option of using the Akaike Information Criterion (AIC) or Bayesian Information Criterion (BIC).</h2>
+<p>We add the argument qMax which determines up until which lag we are going to compute the criteria.</p>
+<div id="code-2" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_aicbic &lt;- function(Y, qMax, X, trend, intercept)           #compute the AIC and BIC criteria for lags from 1 to 6
+{
+  library(stats)                                                   #load stats package
+  AICBIC = matrix(data &lt;- NA, nrow = 2, ncol = qMax)               #create empty matrix for the AIC / BIC criteria
+  
+  for(q in 1:qMax)
+  {
+    print(paste0(&quot;Testing lags number : &quot;, q))
+    
+    lConfMatrix &lt;- matrix_conformation(Y, q, X, trend, intercept) #create a list of conformed objects for the estimation
+    Yex &lt;- lConfMatrix$Yex
+    Gex &lt;- lConfMatrix$Gex
+    
+    mod &lt;- lm(Yex~Gex)                                            #estimate the model with lm
+    AICBIC[1,q] &lt;- AIC(mod)                                       #get AIC
+    AICBIC[2,q] &lt;- BIC(mod)                                       #get BIC
+  }
+  rownames(AICBIC) &lt;- c(&quot;AIC&quot;, &quot;BIC&quot;)
+  colnames(AICBIC) &lt;- paste0(&quot;lags = &quot;, 1:qMax)
+  return(AICBIC)
+}</code></pre>
+</div>
+</div>
+<div id="step-4-lets-create-a-function-to-compute-the-parameters-of-the-varq." class="section level2">
+<h2>Step 4: Let’s create a function to compute the parameters of the VAR(q).</h2>
+<p>This function is based on the pre-computed conformed matrix. We keep the option to compute it by Ordinary Least Squares (OLS), Feasible Generalized Least Squares (FGLS) or Iterative Generalized Least Squares (IGLS). FGLS and IGLS are required if we add additional covariates that are not common to all equations as in a Seemingly Unrelated Regression (SUR). The arguments are a matrix of covariates Z, which includes original and breaking covariates. Yex is an expended vector of the dependent variables Y, nEq is the number of equations, p is the number of observations, estMode is a string which can switch between “OLS”, “FGLS” and “IGLS”. In the case of “IGLS”, iter is an integer which determines the number of iterations used.</p>
+<div id="code-3" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_beta &lt;- function(Z, Yex, nEq, p, estMode, iter)                   #function which takes the regressor matrices Z and Yex, number of equations nEq
+  #number of observations p, mode of estimation &quot;estMode&quot; and number of iterations
+  #in the case of iterative feasible general least square
+{
+  if(estMode == &quot;OLS&quot;)                                                    #if OLS
+  {
+    Beta &lt;- solve(Z %*% t(Z), tol = 0) %*% Z %*% Yex                      #solve the system and get the vector of betas
+  }
+
+  if(estMode == &quot;FGLS&quot;)                                                   #if FGLS
+  {
+    Beta &lt;- solve(Z %*% t(Z), tol = 0) %*% Z %*% Yex                      #solve the system and get the vector of betas
+    Sigma &lt;- compute_sigma(Z, Yex, Beta, nEq)                             #get the covariance matrix of errors
+ 
+    Omega &lt;- kronecker(diag(p), Sigma)                                    #get Omega
+    Beta &lt;- solve(Z %*% solve(Omega, tol = 0) %*% t(Z), tol = 0) %*% Z %*% solve(Omega, tol = 0) %*% Yex        #solve the system and get the vector of betas
+  }
+
+  if(estMode == &quot;IGLS&quot;)                                                   #if IGLS
+  {
+    Beta &lt;- solve(Z %*% t(Z), tol = 0) %*% Z %*% Yex                      #solve the system and get the vector of betas
+    
+    for (i in 1:iter)
+    {
+      Sigma &lt;- compute_sigma(Z, Yex, Beta, nEq)                           #get the covariance matrix of errors
+      Omega &lt;- kronecker(diag(p), Sigma)                                  #get Omega
+      Beta &lt;- solve(Z %*% solve(Omega, tol = 0) %*% t(Z), tol = 0) %*% Z %*% solve(Omega, tol = 0) %*% Yex      #solve the system and get the vector of betas
+      # print(Sigma)                                                      #control for convergence / non divergence
+    }
+  }
+  Sigma &lt;- compute_sigma(Z, Yex, Beta, nEq)                               #final estimation of Sigma
+  return(list(Beta = Beta, Sigma = Sigma))
+}</code></pre>
+</div>
+</div>
+<div id="step-5-lets-compute-the-covariance-matrix-of-errors-sigma." class="section level2">
+<h2>Step 5: Let’s compute the covariance matrix of errors: Sigma.</h2>
+<p>This function simply compute the errors generated by the VAR in OLS, FGLS or IGLS mode.</p>
+<div id="code-4" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_sigma &lt;- function(Z, Yex, Beta, nEq)                    #compute the covariance matrix of errors as in BLS (1998)
+{
+  errors &lt;- (Yex - t(Z) %*% Beta)                               #get the n*p vector of residuals
+  Errors &lt;- matrix(errors, ncol = nEq, byrow = T)               #reset as matrix to obtain Sigma
+  Sigma &lt;- cov(Errors)
+
+  return(Sigma)
+}</code></pre>
+</div>
+</div>
+<div id="step-6-we-compute-the-f-statistic-of-the-selected-breaking-parameters." class="section level2">
+<h2>Step 6: We compute the F-statistic of the selected breaking parameters.</h2>
+<div id="code-5" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_fstat &lt;- function(R, Beta, Z, p, Sigma)                   #compute the f-statistic as in BLS (1998)
+{
+  RBeta &lt;- R %*% Beta                         #pre compute the RBeta matrix with the selected coefficients allowed to break
+
+  if(!is.null(Sigma))                         #if the covariance matrix of error is passed as argument, compute F-stat
+  {
+    Omega &lt;- kronecker(diag(p), Sigma)        #get Omega
+    Fk &lt;- p * t(RBeta) %*% solve(R %*% solve((Z %*% solve(Omega, tol = 0) %*% t(Z)) / p, tol = 0) %*% t(R), tol = 0) %*% RBeta
+  }
+  return(Fk)
+}</code></pre>
+</div>
+</div>
+<div id="step-7-before-stepping-into-the-confidence-interval-computation-lets-write-a-function-computing-the-alphas-based-on-critical-values-of-the-limiting-distribution-v-see-picard-1985." class="section level2">
+<h2>Step 7: Before stepping into the confidence interval computation, let’s write a function computing the alphas based on critical values of the limiting distribution V (see, Picard, 1985).</h2>
+<p>This function takes a vector of critical values (e.g., 90%, 95% and 99%) and get the corresponding alpha levels.</p>
+<div id="code-6" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_vdistr_cv = function(ci = c(0,9, 0.95, 0,99))          #computes the critical values for a vector of confidence intervals proposed, ci
+{
+  u &lt;- length(ci)                         #get the number of ci elements
+  target &lt;- 1 - (1 - ci) / 2              #redefine target for a two tail CI
+  
+  print(paste0(&quot;The vdistr targets are: &quot;,target))
+  x &lt;- seq(-200, 200, 0.01)               #define the support sequence &quot;x&quot; for the CDF of V
+  
+  V &lt;- (3 / 2) * exp(abs(x)) * pnorm( (-3 / 2) * abs(x)^0.5 )  - (1 / 2) * pnorm( (-1 / 2) * abs(x)^0.5 ) #compute V
+  
+  cumV &lt;- cumsum(V)/sum(V)                #scale the CDF of V to reach one
+  
+  
+  # dev.new()                                               
+  # plot(x, cumsum(gamma)/sum(gamma), t = &#39;l&#39;)                    #optionally plot V (nice shape!)
+  
+  cv &lt;- rep(NA, u)
+  k &lt;- 1
+  
+  print(target)
+  for(i in 2:length(x))
+  {
+    if(cumV[i-1] &lt; target[k] &amp;&amp; cumV[i] &gt;= target[k])
+    {
+      cv[k] &lt;- x[i]
+      k &lt;- k + 1
+      if(k&gt;u)
+        break
+    }  
+  }
+  print(cv)
+  return(cv)
+}</code></pre>
+</div>
+</div>
+<div id="step-8-we-compute-the-corresponding-confidence-intervals-for-a-potential-break-date." class="section level2">
+<h2>Step 8: We compute the corresponding confidence intervals for a potential break date.</h2>
+<p>This function uses the original G matrix of covariates, the selection matrix S, the covariance matrix Sigma and the alphas from the critical values computed above.</p>
+<div id="code-7" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_ci &lt;- function(G, S, Sigma, R, Beta, cv, p)             #as per Bekeart Harvey Lumsdaine (2002) // recall that RBeta = S %*% deltaT
+{
+  u &lt;- length(cv)                                               #get the number of critical values from the vdistr
+  ciDelta &lt;- rep(NA, u)                                         #create empty vector
+
+  RBeta &lt;- R %*% Beta                                           #pre compute the selection of (breaking) parameters to test
+
+  tCi &lt;- solve(t(RBeta) %*% S %*% kronecker((G %*% t(G)) / p, solve(Sigma, tol = 0)) %*% t(S) %*% RBeta, tol = 0)    #compute the conf interval factor
+
+  for(i in 1:u)
+  {
+    ciDelta[i] &lt;- cv[i] * tCi                                   #get the vector of critical values
+  }
+  # print(ciDelta)
+  return(ciDelta)
+}</code></pre>
+</div>
+</div>
+<div id="step-9-one-step-before-launching-the-main-function-get-a-nice-graphical-output-for-our-results." class="section level2">
+<h2>Step 9: One step before launching the main function, get a nice graphical output for our results.</h2>
+<div id="code-8" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_plot_stats &lt;- function(myDates, Variables, fstat, CI, Y, meanShift)     #function to compute summary statistics and deliver plots
+{
+  library(ggplot2)
+  library(reshape2)
+  library(ggpubr)
+  library(stargazer)
+  
+  myDates &lt;- as.Date(myDates, format = &quot;%d.%m.%Y&quot;)
+  
+  
+  maxF &lt;- which.max(fstat)                                         #get the index when the break occurs
+  cis &lt;- round(CI[maxF, ])                                         #get the confidence intervals around the break
+  
+                                                                   #hard code for three different confidence intervals
+  startDate90 &lt;- myDates[maxF - cis[1]]                                       
+  endDate90 &lt;- myDates[maxF + cis[1]] 
+  
+  startDate95 &lt;- myDates[maxF - cis[2]]                                             
+  endDate95 &lt;- myDates[maxF + cis[2]]                            
+                       
+  startDate99 &lt;- myDates[maxF - cis[3]]                                              
+  endDate99 &lt;- myDates[maxF + cis[3]]                            
+  
+  p &lt;- dim(Y)[1]
+  n &lt;- dim(Y)[2]
+  Y &lt;- Y * 100                                                     #get values in percentage
+  
+  Y &lt;- apply(Y, 2, as.double)
+  Y &lt;- data.frame(cbind(myDates, Y))
+  
+  colnames(Y)[1] &lt;- &quot;Date&quot;
+  colnames(Y)[2:(n + 1)] &lt;- Variables
+ 
+  Y[,1] &lt;- myDates
+ 
+  Y &lt;- melt(Y, id.var = &quot;Date&quot;)                                   #reshape to long format
+  names(Y)[2] = &quot;Variables&quot;
+  
+  dev.new()
+  g1 &lt;- ggplot(Y, aes(x = Date, y = value, group = Variables, colour = Variables))
+  g1 &lt;- g1  + geom_line()
+  
+  g1 &lt;- g1 + ggtitle(&quot;&quot;) + xlab(&quot;Date&quot;) + ylab(&quot;Intensity (%)&quot;)
+  
+  g1 &lt;- g1 + coord_cartesian(ylim = c(0, max(Y$value, na.rm = T)))
+  g1 &lt;- g1 + scale_y_continuous(expand = c(0,0))                                                    #force the y axis to start at zero
+  
+  g1 &lt;- g1 + scale_x_date(breaks = scales::pretty_breaks(n = 10))
+
+  g1 &lt;- g1 + theme_bw()
+                                                                                                    #add shaded area for various ci
+  g1 &lt;- g1+annotate(&quot;rect&quot;, xmin = startDate90, xmax = endDate90, ymin = 0, ymax = Inf,
+                   alpha = .6)
+  g1 &lt;- g1+annotate(&quot;rect&quot;, xmin = startDate95, xmax = endDate95, ymin = 0, ymax = Inf,
+                    alpha = .4)
+  g1 &lt;- g1+annotate(&quot;rect&quot;, xmin = startDate99, xmax = endDate99, ymin = 0, ymax = Inf,
+                    alpha = .2)
+  
+  d &lt;- data.frame(date = myDates[maxF], event = &quot;The event&quot;)
+  
+  g1 &lt;- g1 + geom_vline(data = d, mapping = aes(xintercept = date), color = &quot;black&quot;, size = 1)      #add the break line
+  
+  return(g1)
+}</code></pre>
+</div>
+</div>
+<div id="step-10-finally-the-main-function-wrapping-up-all-others-and-running-a-loop-for-all-potential-k-breaks-considered" class="section level2">
+<h2>Step 10: Finally, the main function, wrapping up all others and running a loop for all potential k breaks considered</h2>
+<p>This function takes all the aforementioned arguments, adding a trim parameter (in percent) to compute the burn-in and “burn-out” periods.
+In addition, I add a boolean parameter (posBreak), which if set to TRUE will discard all breaks arising from a decrease in intercept or full parameters.</p>
+<div id="code-9" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>main &lt;- function(Y                                      #Y is a matrix or vector which will be lagged by (q) to compute a VAR(q)
+                 , X = NULL                             #X is a matrix of (contemporaneous) covariates
+                 , trend = FALSE                        #trend is a boolean indicating whether a trend vector should be added to the VAR
+                 , intercept = TRUE                     #intercept is a boolean indicating whether the test applies on the mean shift (TRUE) or all parameters (FALSE)
+                 , ci = c(0.9, 0.95, 0.99)              #ci is the vector of confidence intervals (in growing order) to compute based on the CDF of a V distr.
+                 , estMode = &quot;OLS&quot;                      #estMode can take values of &quot;OLS&quot;, &quot;FGLS&quot;, &quot;IGLS&quot;
+                 , iter = 3                             #in the case of &quot;IGLS&quot;, the number of iteration &quot;iter&quot; can be specified.
+                 , aicbicMode = &quot;AIC&quot;                   #AicbicMode can be &quot;AIC&quot; or &quot;BIC&quot; depending on the maximum criterion to select
+                 , qMax = 6                             #qMax is the number of lags (from 1 to qMax) tested to determine the AIC / BIC maximum.
+                 , trim = 0.15                          #trim is the percentage parameter to start and end the sample analysis
+                 , posBreak = FALSE                     #if we want the algorithm to only detect positive breaks
+)
+{
+  myVars &lt;- colnames(Y)                                                   #get the variable names
+
+  qOpt &lt;- compute_aicbic(Y, qMax, X, trend, intercept)                    #return the AIC and BIC criteria for lags from 1 to 6
+  
+  
+  print(qOpt)                                                             #print the matrix of AIC and BIC for each lags
+
+  q &lt;- as.numeric(which.max(qOpt[aicbicMode,]))                           #choose the lag q according to the max AIC
+  print(paste0(&quot;lag with the maximum &quot;, aicbicMode, &quot; is: &quot;, q))
+
+  lconf &lt;- matrix_conformation(Y, q, X, trend, intercept)                 #create a list of conform objects for the estimation
+
+  Yex &lt;- lconf$Yex                                                        #get the conformed (expanded) Yex matrix (for the system, in vector form)
+  Gex &lt;- lconf$Gex                                                        #get the conformed G matrix of regressors for the system
+  p &lt;- lconf$p                                                            #final number of observations
+  G &lt;- lconf$G                                                            #original matrix of regressors
+  S &lt;- lconf$S                                                            #selection matrix
+  Y &lt;- lconf$Y                                                            #matching original dependent variables matrix
+  nEq &lt;- lconf$nEq                                                        #original number of equations / dependent variables
+  myDates &lt;- lconf$myDates                                                #matching dates
+
+  print(paste0(&quot;The number of equations in the system is: &quot;, nEq))
+
+  fstat &lt;- rep(NA, p)                                                     #create a vector of f_statistics for each k tested
+  meanShift &lt;- rep(NA, p)                                                 #create a vector with the evaluated size of the intercept difference
+  CI &lt;- matrix(data = NA, nrow = p, ncol = length(ci))                    #create a matrix of confidence intervals for each k tested
+
+  cv &lt;- compute_vdistr_cv(ci)                                             #compute critical values for the vector of confidence intervals proposed
+
+  startInd &lt;- round(trim * p)                                             #start index
+  endInd &lt;- round(p - trim * p)                                           #end index
+
+  for(k in startInd:endInd)                                               #loop over the k with a trimming date / burn period
+  {
+    if(k%%10==0)
+      print(paste0(&quot;The iteration is at the level k = &quot;, k))              #get an idea of where we are in the loop every 10 iterations
+    
+    
+    GexB &lt;- Gex %*% t(S)
+    GexB[1:((k - 1) * (nEq)),] &lt;- 0                                       #force filling the GexB matrix with 0 before and original values after k
+
+    Z &lt;- t(cbind(Gex, GexB))                                              #bind the regressor and breaking regressor matrices together
+
+    lbetaSigma &lt;- compute_beta(Z, Yex, nEq, p, estMode, iter)             #compute the BetaSigma object list
+    
+    Beta &lt;- lbetaSigma$Beta                                               #get the vector of betas
+    Sigma &lt;- lbetaSigma$Sigma                                             #get the covariance matrix of errors
+    pBeta &lt;- length(Beta)                                                 #get the length of the vector of betas
+
+    #create a selection matrix to get only the betas of interest (breakings)
+    if(intercept)                                                         #1 - case where only shift in intercept
+    {
+      R &lt;- matrix(data = 0, nrow = nEq, ncol = pBeta)
+      R[,(pBeta - nEq + 1):pBeta] &lt;- diag(nEq)
+    }
+
+    if(!intercept)                                                        #2 - case where all parameters break
+    {
+      R &lt;- matrix(data = 0, nrow = pBeta / 2 , ncol = pBeta)
+      R[,(pBeta / 2 + 1):pBeta] &lt;- diag(pBeta / 2)
+    }
+
+    fstat[k] &lt;- compute_fstat(R, Beta, Z, p, Sigma)                      #compute the F-statistic for the current k
+    CI[k, ] &lt;- compute_ci(G, S, Sigma, R, Beta, cv, p)                   #compute the confidence interval for the current k
+
+    meanShift[k] &lt;- mean(R %*% Beta)                                       #get the mean intercept shift
+  }
+
+  if(posBreak)                                                           #if posBreak is TRUE, limit to positive break detection
+    fstat[meanShift &lt; 0] &lt;- 0
+
+  dev.new()                                                              
+  plot(fstat)                                                            #plots the generated sequence of F-statistics
+
+  g1 &lt;- compute_plot_stats(myDates, myVars, fstat, CI, Y)
+  
+  breakInd &lt;- which.max(fstat)
+  breakDate &lt;- myDates[breakInd]
+  breakCi &lt;- CI[breakInd, ]
+  rownames(Y) &lt;- myDates
+  Gt &lt;- t(G)
+  rownames(Gt) &lt;- myDates
+  meanShift &lt;- meanShift[breakInd]
+  maxF = max(fstat, na.rm=T)
+  trimDates = matrix(data=c(myDates[startInd], myDates[endInd]),nrow = 1, ncol = 2)
+  colnames(trimDates) &lt;- c(&quot;begin trim date&quot;, &quot;end trim date&quot;)
+  
+  return(list(fstat = fstat                                               #return a &quot;multibreak&quot; class object
+              , maxF = maxF
+              , confInterval = breakCi
+              , criticalValues = cv
+              , breakDate = breakDate
+              , Y = data.frame(Y)
+              , G = data.frame(Gt)
+              , breakInd = breakInd
+              , meanShift = meanShift
+              , aicbic = qOpt
+              , g1 = g1
+              , trimDates = trimDates))
+}</code></pre>
+</div>
+</div>
+<div id="simulation-now-that-everything-is-ready-lets-generate-some-clean-data-to-test-whether-we-are-able-to-identify-break-dates." class="section level2">
+<h2>Simulation: now that everything is ready, let’s generate some clean data to test whether we are able to identify break dates.</h2>
+<p>This extra function generates a matrix of p time series of n observations, based on the R rnorm generation. The argument intensity is a double value which is added to the generated data after the break that we can set to occur at any percent of the dataset (here at 35%)</p>
+<div id="code-10" class="section level3">
+<h3>Code</h3>
+<pre class="r"><code>compute_simul &lt;- function(n, p, intensity = 1, whenbreak = 0.35)
+{
+  set.seed(123)                                     #optional
+  
+  prebreakN &lt;- round(n * whenbreak)
+  postbreakN &lt;- round(n * (1 - whenbreak))
+  
+  Y &lt;- rbind(matrix(rnorm(prebreakN * p) + 5, nrow = prebreakN, ncol = p), matrix(rnorm(postbreakN * p) + 5 + intensity, nrow = postbreakN, ncol = p))
+  startDate &lt;- as.Date(&quot;22.01.2020&quot;, format = &quot;%d.%m.%Y&quot;)                                            #date when I wrote this code
+  
+  simulDates &lt;- 0:(n - 1) + startDate
+  simulDates &lt;- format(simulDates, format = &quot;%d.%m.%Y&quot;)
+
+  rownames(Y) &lt;- simulDates
+  colnames(Y) &lt;- LETTERS[1:p]
+  
+  print(head(Y))
+  return(Y)
+}</code></pre>
+</div>
+</div>
+<div id="graphical-result-with-three-simulated-variables" class="section level1">
+<h1>Graphical result with three simulated variables</h1>
+<div class="figure">
+<img src="/post/multivariate-break-test/3_variables.jpg" alt="Fig 1. Break detection for three simulated variables experiencing a common break at 35% of the sample, with an intensity parameter of four. The order of the VAR(q) is 10, after selection by the BIC, with no trend or additional covariates added. The break is easy to identify visually and is well captured by the algorithm. Max F-statistic: 159.34, and the confidence intervals for 90%, 95% and 99%, represented by the shaded areas are very concentrated around the break." />
+<p class="caption">Fig 1. Break detection for three simulated variables experiencing a common break at 35% of the sample, with an intensity parameter of four. The order of the VAR(q) is 10, after selection by the BIC, with no trend or additional covariates added. The break is easy to identify visually and is well captured by the algorithm. Max F-statistic: 159.34, and the confidence intervals for 90%, 95% and 99%, represented by the shaded areas are very concentrated around the break.</p>
+</div>
+</div>
+<div id="graphical-result-with-five-simulated-variables" class="section level1">
+<h1>Graphical result with five simulated variables</h1>
+<div class="figure">
+<img src="/post/multivariate-break-test/5_variables.jpg" alt="Fig 2. Break detection for five simulated variables experiencing a common break at 35% of the sample, with an intensity parameter of 0.5. The order of the VAR(q) is 10, after selection by the BIC, with no trend or additional covariates added. The break is impossible to detect visually. However, the algorithm accurately captures it. Max F-statistic: 22.72 and the confidence intervals for 90%, 95% and 99%, represented by the shaded areas are much wider." />
+<p class="caption">Fig 2. Break detection for five simulated variables experiencing a common break at 35% of the sample, with an intensity parameter of 0.5. The order of the VAR(q) is 10, after selection by the BIC, with no trend or additional covariates added. The break is impossible to detect visually. However, the algorithm accurately captures it. Max F-statistic: 22.72 and the confidence intervals for 90%, 95% and 99%, represented by the shaded areas are much wider.</p>
+</div>
+<p>To get the full working package, including data, you can clone or import the project from my <a href="https://github.com/loicym/multibreak">github repository</a></p>
+</div>

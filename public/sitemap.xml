@@ -3,23 +3,103 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>/talk/2020hfr_poster/</loc>
-    <lastmod>2020-09-20T00:00:00+00:00</lastmod>
+    <loc>/categories/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/java/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/categories/java/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
   </url>
   
   <url>
     <loc>/</loc>
-    <lastmod>2020-09-20T00:00:00+00:00</lastmod>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/matrix-computation/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/post/multivariate_break_test/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/multivariate-time-series/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/nlp/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/plot/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/post/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/categories/r/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/r-markdown/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/sec/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/post/edgar-web-browsing-emulation-sentiment/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/sentiment-extraction/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/structural-breaks/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/tags/web-scrapping/</loc>
+    <lastmod>2020-01-22T21:13:14-05:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>/talk/2020hfr_poster/</loc>
+    <lastmod>2020-01-16T00:00:00+00:00</lastmod>
   </url>
   
   <url>
     <loc>/talk/</loc>
-    <lastmod>2020-09-20T00:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/categories/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
+    <lastmod>2020-01-16T00:00:00+00:00</lastmod>
   </url>
   
   <url>
@@ -33,43 +113,8 @@
   </url>
   
   <url>
-    <loc>/tags/matrix-computation/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
     <loc>/tags/optimal-portfolio-choice/</loc>
     <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/plot/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/post/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/categories/r/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/r-markdown/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/tags/</loc>
-    <lastmod>2019-12-30T21:13:14-05:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>/post/edgar-web-browsing-emulation-sentiment/</loc>
-    <lastmod>2019-12-30T00:00:00+00:00</lastmod>
   </url>
   
   <url>
